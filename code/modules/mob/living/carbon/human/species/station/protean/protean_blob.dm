@@ -206,7 +206,7 @@
 	if(refactory && istype(A,/obj/item/stack/material))
 		var/obj/item/stack/material/S = A
 		var/substance = S.material.name
-		var/list/edible_materials = list("steel", "plasteel", "diamond", "mhydrogen") //Can't eat all materials, just useful ones.
+		var/list/edible_materials = list(MAT_STEEL, MAT_SILVER, MAT_GOLD, MAT_URANIUM, MAT_METALHYDROGEN) //Can't eat all materials, just useful ones.
 		var/allowed = FALSE
 		for(var/material in edible_materials)
 			if(material == substance)
@@ -283,6 +283,8 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 
+	var/panel_selected = client?.statpanel == "Protean"
+
 	//Record where they should go
 	var/atom/creation_spot = drop_location()
 
@@ -352,6 +354,9 @@
 
 	//Mail them to nullspace
 	moveToNullspace()
+	
+	if(blob.client && panel_selected)
+		blob.client.statpanel = "Protean"
 
 	//Message
 	blob.visible_message("<b>[src.name]</b> collapses into a gooey blob!")
@@ -367,6 +372,19 @@
 		var/obj/belly/B = belly
 		B.forceMove(blob)
 		B.owner = blob
+
+	var/datum/vore_preferences/P = blob.client?.prefs_vr
+	
+	if(P)
+		blob.digestable = P.digestable
+		blob.devourable = P.devourable
+		blob.feeding = P.feeding
+		blob.digest_leave_remains = P.digest_leave_remains
+		blob.allowmobvore = P.allowmobvore
+		blob.vore_taste = P.vore_taste
+		blob.permit_healbelly = P.permit_healbelly
+		blob.can_be_drop_prey = P.can_be_drop_prey
+		blob.can_be_drop_pred = P.can_be_drop_pred
 
 	//Return our blob in case someone wants it
 	return blob
@@ -435,6 +453,8 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 
+	var/panel_selected = blob.client?.statpanel == "Protean"
+
 	//Stop healing if we are
 	if(blob.healing)
 		blob.healing.expire()
@@ -460,6 +480,9 @@
 	//Put our owner in it (don't transfer var/mind)
 	ckey = blob.ckey
 	temporary_form = null
+	
+	if(client && panel_selected)
+		client.statpanel = "Protean"
 
 	//Transfer vore organs
 	vore_selected = blob.vore_selected

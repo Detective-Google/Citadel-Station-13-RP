@@ -73,6 +73,7 @@
 		brainmob << sound
 
 /datum/nifsoft/soulcatcher/proc/say_into(var/message, var/mob/living/sender, var/mob/eyeobj)
+	message = trim(message)
 	if(!length(message))
 		return
 	message = sender.say_emphasis(message)
@@ -92,6 +93,7 @@
 	log_nsay(message,nif.human.real_name,sender)
 
 /datum/nifsoft/soulcatcher/proc/emote_into(var/message, var/mob/living/sender, var/mob/eyeobj)
+	message = trim(message)
 	if(!length(message))
 		return
 	message = sender.say_emphasis(message)
@@ -295,12 +297,20 @@
 	nif = null
 	return ..()
 
+/mob/living/carbon/brain/caught_soul/ghostize(can_reenter_corpse)
+	. = ..()
+	if(!can_reenter_corpse)
+		qdel(src)
+
 /mob/living/carbon/brain/caught_soul/Life()
 	if(!mind || !key)
 		qdel(src)
 		return
 
 	. = ..()
+	
+	if(!client)
+		return
 
 	if(!parent_mob && !transient &&(life_tick % 150 == 0) && soulcatcher.setting_flags & NIF_SC_BACKUPS)
 		SStranscore.m_backup(mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
@@ -362,6 +372,34 @@
 	if(silent)
 		return FALSE
 	soulcatcher.say_into(message,src,eyeobj)
+
+/mob/living/carbon/brain/caught_soul/eastshift()
+	if(!eyeobj)
+		return
+	if(eyeobj.pixel_x <= 16)
+		eyeobj.pixel_x++
+		eyeobj.is_shifted = TRUE
+
+/mob/living/carbon/brain/caught_soul/westshift()
+	if(!eyeobj)
+		return
+	if(eyeobj.pixel_x >= -16)
+		eyeobj.pixel_x--
+		eyeobj.is_shifted = TRUE
+
+/mob/living/carbon/brain/caught_soul/northshift()
+	if(!eyeobj)
+		return
+	if(eyeobj.pixel_y <= 16)
+		eyeobj.pixel_y++
+		eyeobj.is_shifted = TRUE
+
+/mob/living/carbon/brain/caught_soul/southshift()
+	if(!eyeobj)
+		return
+	if(eyeobj.pixel_y >= -16)
+		eyeobj.pixel_y--
+		eyeobj.is_shifted = TRUE
 
 /mob/living/carbon/brain/caught_soul/emote(var/act,var/m_type=1,var/message = null)
 	if(silent)
@@ -454,6 +492,12 @@
 /mob/observer/eye/ar_soul/proc/human_moved()
 	if(get_dist(parent_human,src) > SOULCATCHER_RANGE)
 		forceMove(get_turf(parent_human))
+
+/mob/observer/eye/ar_soul/Moved()
+	. = ..()
+	if(is_shifted)
+		pixel_x = 0
+		pixel_y = 0
 
 ///////////////////
 //The catching hook
